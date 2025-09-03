@@ -1,5 +1,5 @@
 import express from 'express';
-import createAccount from './accountRouter.js'; //julien
+import account from './accountRouter.js'; //julien
 import contact from './contactRouter.js';	//Jerem
 import password from './passwordRouter.js'; //Paulé
 import welcome from './welcomeRouter.js';	//Nihel
