@@ -1,23 +1,19 @@
+
 import transporter from '../transporter.js';
 import { db } from '../db.js';
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 export async function forgotPassword(req, res) {
   const { email } = req.body;
-  const genericMsg = 'Si cet email existe, un lien a été envoyé.';
   await db.read();
   const user = db.data.users.find(u => u.email === email);
+  const genericMsg = 'Si cet email existe, un lien a été envoyé.';
   if (user) {
-    const token = crypto.randomUUID();
-    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
-    db.data.resetTokens.push({
-      token,
-      email,
-      expires: expires.toISOString(),
-      used: false
-    });
+    const token = crypto.randomBytes(20).toString('hex');
+    db.data.resetTokens.push({ token, email });
     await db.write();
-    const resetLink = `http://localhost:5173/reset-password?token=${token}`;
+    const resetLink = `http://localhost:3000/reset?token=${token}`;
     await transporter.sendMail({
       to: email,
       subject: 'Réinitialisation de mot de passe',
@@ -26,7 +22,6 @@ export async function forgotPassword(req, res) {
   }
   res.json({ message: genericMsg });
 }
-
 
 export async function resetPassword(req, res) {
   const { token, password, confirm } = req.body;
@@ -38,23 +33,15 @@ export async function resetPassword(req, res) {
   }
   await db.read();
   const reset = db.data.resetTokens.find(t => t.token === token);
-  if (!reset || reset.used) {
-    return res.status(400).json({ success: false, message: 'Token invalide ou déjà utilisé.' });
-  }
-  if (new Date(reset.expires) < new Date()) {
-    return res.status(400).json({ success: false, message: 'Token expiré.' });
+  if (!reset) {
+    return res.status(400).json({ success: false, message: 'Token invalide.' });
   }
   const user = db.data.users.find(u => u.email === reset.email);
   if (!user) {
     return res.status(400).json({ success: false, message: 'Utilisateur introuvable.' });
   }
-  const salt = crypto.randomBytes(16).toString('hex');
-  crypto.pbkdf2(password, salt, 100000, 64, 'sha512', async (err, derivedKey) => {
-    if (err) return res.status(500).json({ success: false, message: 'Erreur de hashage.' });
-    user.password = `${salt}:${derivedKey.toString('hex')}`;
-    reset.used = true;
-    await db.write();
-    res.json({ success: true, message: 'Mot de passe réinitialisé.' });
-  });
+  user.password = await bcrypt.hash(password, 10);
+  await db.write();
+  res.json({ success: true, message: 'Mot de passe réinitialisé.' });
 }
 
