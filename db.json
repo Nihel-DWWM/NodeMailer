@@ -1,0 +1,28 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "alice@example.com",
+      "password": "$2b$10$abcdefghijklmnopqrstuv" 
+    },
+    {
+      "id": "2",
+      "email": "bob@example.com",
+      "password": "$2b$10$wxyzabcdefghijklmnopqr"
+    }
+  ],
+  "resetTokens": [
+    {
+      "token": "tokenalice123",
+      "email": "alice@example.com",
+      "expires": "2025-09-03T12:00:00.000Z",
+      "used": false
+    },
+    {
+      "token": "tokenbob456",
+      "email": "bob@example.com",
+      "expires": "2025-09-03T13:00:00.000Z",
+      "used": true
+    }
+  ]
+}
